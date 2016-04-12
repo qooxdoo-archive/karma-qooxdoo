@@ -1,4 +1,19 @@
 (function(window) {
+  var formatError = function (error) {
+    var stack = error.stack;
+    var message = error.message;
+
+    if (stack) {
+      if (message && stack.indexOf(message) === -1) {
+        stack = message + '\n' + stack
+      }
+      return stack;
+    }
+
+    return message;
+  }
+
+
   var createQooxdooStartFn = function(tc) {
 
     return function () {
@@ -32,7 +47,7 @@
           e.getData().forEach(function(errMap) {
             var suiteResult = suiteResults[errMap.test.getFullName()];
             suiteResult.status = "failure";
-            suiteResult.exceptions.push(errMap.exception);
+            suiteResult.exceptions.push(formatError(errMap.exception));
           });
         });
 
@@ -69,10 +84,6 @@
           //window.console.debug(testName, "endTest");
 
           var suiteResult = suiteResults[testName];
-          // if (suiteResult.status == "startTest") {
-          //   var msg = testName +  " passed";
-            // window.console.info(msg);
-          // }
 
           var log = suiteResult.exceptions.map(function(ex) {
             return ex.toString();
@@ -89,9 +100,11 @@
           }
 
           var result = {
+            id : '',
             description: description,
             suite: suite,
             success: (suiteResult.status == "startTest" || suiteResult.status == "skip"),
+            skipped: suiteResult.status == "skip",
             log: log,
             time: Date.now() - suiteResult.startTime
           };
