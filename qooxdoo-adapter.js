@@ -1,5 +1,6 @@
 (function(window) {
   var createQooxdooStartFn = function(tc) {
+
     return function () {
 
       var suiteResults = {};
@@ -68,10 +69,10 @@
           //window.console.debug(testName, "endTest");
 
           var suiteResult = suiteResults[testName];
-          if (suiteResult.status == "startTest") {
-            var msg = testName +  " passed";
-            window.console.info(msg);
-          }
+          // if (suiteResult.status == "startTest") {
+          //   var msg = testName +  " passed";
+            // window.console.info(msg);
+          // }
 
           var log = suiteResult.exceptions.map(function(ex) {
             return ex.toString();
@@ -98,24 +99,27 @@
           tc.result(result);
           if (testCount == 0) {
             tc.info({ total: totalTests });
-            tc.complete();
+            tc.complete({
+              coverage: window.__coverage__
+            });
           }
         });
       };
 
       window.onload = function() {
         var loader = qx.core.Init.getApplication();
+        qx.event.Timer.once(function() {
+          loader = qx.core.Init.getApplication();
 
-        var desc = JSON.parse(loader.getTestDescriptions());
-        var testList = getTestList(desc);
-        totalTests = testCount = testList.length;
-        tc.info({total: totalTests});
+          var desc = JSON.parse(loader.getTestDescriptions());
+          var testList = getTestList(desc);
+          totalTests = testCount = testList.length;
+          tc.info({total: totalTests});
 
-
-        var testResult = new qx.dev.unit.TestResult();
-        addListeners(testResult);
-
-        loader.getSuite().run(testResult);
+          var testResult = new qx.dev.unit.TestResult();
+          addListeners(testResult);
+          loader.getSuite().run(testResult);
+        }, this, 1000);
       };
     };
   };
