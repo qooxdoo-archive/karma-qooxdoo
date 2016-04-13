@@ -11,8 +11,7 @@
     }
 
     return message;
-  }
-
+  };
 
   var createQooxdooStartFn = function(tc) {
 
@@ -100,10 +99,10 @@
           }
 
           var result = {
-            id : '',
+            id : (totalTests-testCount),
             description: description,
             suite: suite,
-            success: (suiteResult.status == "startTest" || suiteResult.status == "skip"),
+            success: (suiteResult.status == "startTest"),
             skipped: suiteResult.status == "skip",
             log: log,
             time: Date.now() - suiteResult.startTime
@@ -120,18 +119,24 @@
       };
 
       window.onload = function() {
-        var loader = qx.core.Init.getApplication();
+        // var loader = qx.core.Init.getApplication();
         qx.event.Timer.once(function() {
-          loader = qx.core.Init.getApplication();
+          var loader = qx.core.Init.getApplication();
 
-          var desc = JSON.parse(loader.getTestDescriptions());
-          var testList = getTestList(desc);
+          var testDesc = JSON.parse(loader.getTestDescriptions());
+
+          var testList = getTestList(testDesc);
           totalTests = testCount = testList.length;
           tc.info({total: totalTests});
 
           var testResult = new qx.dev.unit.TestResult();
           addListeners(testResult);
-          loader.getSuite().run(testResult);
+          loader.getSuite().getTestClasses().forEach(function(testClass) {
+            testClass.getTestMethods().forEach(function(method) {
+              // window.console.log("running test "+(totalTests-testCount)+"/"+totalTests);
+              method.run(testResult);
+            });
+          });
         }, this, 1000);
       };
     };
