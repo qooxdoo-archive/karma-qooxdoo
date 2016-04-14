@@ -1,31 +1,38 @@
 // Karma configuration
-// Generated on Mon Dec 16 2013 10:16:26 GMT+0100 (CET)
+// Generated on Mon Apr 11 2016 10:15:49 GMT+0200 (CEST)
+var path = require('path');
 
 module.exports = function(config) {
   config.set({
 
-    // base path, that will be used to resolve files and exclude
+    // base path that will be used to resolve all patterns (eg. files, exclude)
     basePath: '',
 
 
     // frameworks to use
-    frameworks: ["qooxdoo"],
+    // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
+    frameworks: ['qooxdoo'],
 
 
-    // list of files / patterns to load in the browser
-    files: [
-      'test/script/tests.js'
-    ],
+    // list of files / patterns to load in the browser => auto-filled by the qooxdoo adapter
+    files: [],
 
 
     // list of files to exclude
     exclude: [
-
     ],
 
 
+    // preprocess matching files before serving them to the browser
+    // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
+    preprocessors: {
+      // 'source/class/qx/{*.js,!(test)/**/*.js}': 'coverage'
+    },
+
+
     // test results reporter to use
-    // possible values: 'dots', 'progress', 'junit', 'growl', 'coverage'
+    // possible values: 'dots', 'progress'
+    // available reporters: https://npmjs.org/browse/keyword/karma-reporter
     reporters: ['progress'],
 
 
@@ -43,32 +50,60 @@ module.exports = function(config) {
 
 
     // enable / disable watching file and executing tests whenever any file changes
-    autoWatch: true,
+    autoWatch: false,
 
 
-    // Start these browsers, currently available:
-    // - Chrome
-    // - ChromeCanary
-    // - Firefox
-    // - Opera (has to be installed with `npm install karma-opera-launcher`)
-    // - Safari (only Mac; has to be installed with `npm install karma-safari-launcher`)
-    // - PhantomJS
-    // - IE (only Windows; has to be installed with `npm install karma-ie-launcher`)
+    // start these browsers
+    // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
     browsers: ['Chrome'],
 
 
-    // If browser does not capture in given timeout [ms], kill it
-    captureTimeout: 60000,
+    browserNoActivityTimeout: 360000,
+    browserDisconnectTimeout: 60000,
 
+    coverageReporter: {
+      dir: 'coverage',
+      reporters: [
+        // reporters not supporting the `file` property
+        // { type: 'html' },
+        { type: 'text-summary' }
+      ]
+    },
 
     // Continuous Integration mode
-    // if true, it capture browsers, run tests and exit
-    singleRun: false,
+    // if true, Karma captures browsers, runs the tests and exits
+    singleRun: true,
 
+    // Concurrency level
+    // how many browser should be started simultaneous
+    concurrency: Infinity,
+
+    // proxy settings for coverage
+    // proxies: {
+    //   '/resource/': 'http://127.0.0.1:9999/source/resource/',
+    //   '/qx/': 'http://127.0.0.1:9999/test/resource/qx/',
+    //   '/source/resource/': 'http://127.0.0.1:9999/source/resource/',
+    //   '/test/': 'http://127.0.0.1:9999/test/',
+    //   '/script/': '/base/test/script/',
+    //   '/component/': '/absolute' + path.resolve(__dirname, '../component') + "/",
+    //   '/source/class/': '/base/source/class/',
+    // },
+
+    // proxy settings without coverage (proxying resources, including PHP scripts to a PHP enabled webserver)
+    // Note: you have to start a local php server with 'php -S 127.0.0.1:9999' in this folder
+    proxies: {
+      '/resource/': 'http://127.0.0.1:9999/source/resource/',
+      '/qx/': 'http://127.0.0.1:9999/test/resource/qx/',
+      '/source/resource/': 'http://127.0.0.1:9999/source/resource/'
+    },
 
     plugins: [
-      'karma-chrome-launcher',
-      require('./qooxdoo-karma.js')
-    ]
-  });
+      'karma-*',
+      require('../../qooxdoo-karma/qooxdoo-karma.js')
+    ],
+
+    qooxdooFramework: {
+      testSources: true
+    }
+  })
 };

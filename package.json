@@ -1,0 +1,23 @@
+{
+  "name": "karma-qooxdoo",
+  "version": "0.1.0",
+  "description": "A Karma plugin - qooxdoo unit testing framework adapter.",
+  "main": "qooxdoo-adapter.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/peuter/qooxdoo-karma.git"
+  },
+  "keywords": [
+    "karma-plugin",
+    "karma-adapter",
+    "qooxdoo"
+  ],
+  "author": "Tobias Braeutigam <tbraeutigam@gmail.com>",
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
+  "license": "MIT",
+  "contributors": [
+    "Daniel Wagner"
+  ]
+}
