@@ -130,7 +130,7 @@
 
           var testResult = new qx.dev.unit.TestResult();
           addListeners(testResult);
-          loader.getSuite().run(testResult);
+          loader.getSuite().runAsync(testResult);
         }, this, 0);
       };
     };
