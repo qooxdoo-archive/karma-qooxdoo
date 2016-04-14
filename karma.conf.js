@@ -97,11 +97,6 @@ module.exports = function(config) {
       '/source/resource/': 'http://127.0.0.1:9999/source/resource/'
     },
 
-    plugins: [
-      'karma-*',
-      require('../../qooxdoo-karma/qooxdoo-karma.js')
-    ],
-
     qooxdooFramework: {
       testSources: true
     }
