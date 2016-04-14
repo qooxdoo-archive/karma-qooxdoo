@@ -31,12 +31,6 @@ var initQooxdoo = function(logger, config, customFilehandlers) {
   }
 
   var qooxdooCustomFileHandler = function (request, response) {
-    // if (includeFiles === true) {
-    //   // do not serve as the files are already loaded
-    //   response.writeHead(200);
-    //   response.end("");
-    //   return;
-    // }
     var url = request.url;
     var normalizedPath = url.indexOf('?') > -1 ? url.substring(0, url.indexOf('?')) : url;
     for (var proxy in qooxdooProxies) {

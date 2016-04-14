@@ -119,7 +119,6 @@
       };
 
       window.onload = function() {
-        // var loader = qx.core.Init.getApplication();
         qx.event.Timer.once(function() {
           var loader = qx.core.Init.getApplication();
 
@@ -131,13 +130,8 @@
 
           var testResult = new qx.dev.unit.TestResult();
           addListeners(testResult);
-          loader.getSuite().getTestClasses().forEach(function(testClass) {
-            testClass.getTestMethods().forEach(function(method) {
-              // window.console.log("running test "+(totalTests-testCount)+"/"+totalTests);
-              method.run(testResult);
-            });
-          });
-        }, this, 1000);
+          loader.getSuite().run(testResult);
+        }, this, 0);
       };
     };
   };
