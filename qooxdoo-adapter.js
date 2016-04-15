@@ -1,15 +1,43 @@
+
 (function(window) {
+  var parser = window.document.createElement("a");
+
   var formatError = function (error) {
     var stack = error.stack;
     var message = error.message;
 
     if (stack) {
+      var trace = [];
+      var lines = stack.split("\n");
       if (message && stack.indexOf(message) === -1) {
-        stack = message + '\n' + stack
+        trace.push(message.trim());
       }
-      return stack;
-    }
+      lines.forEach(function(line, i) {
+        var parts = /^[\t\s]*at\s([^\(]+)\s\((.+)\)$/.exec(line);
+        if (!parts) {
+          trace.push(line);
+          return;
+        }
+        var errorLine = "\tat "+parts[1];
 
+        if (parts[2].indexOf("/") > -1) {
+          // strip down url
+          var sourceLine = /^(.+):([0-9]+):([0-9]+)$/.exec(parts[2]);
+          var urlString = sourceLine ? sourceLine[1] : parts[2];
+
+          parser.href = urlString;
+          errorLine += " -> " + parser.pathname.substring(1);
+          if (sourceLine.length === 4 && sourceLine[2]) {
+            errorLine += ":" + sourceLine[2]+":"+sourceLine[3];
+          }
+        } else {
+          errorLine += " -> ("+parts[2]+")";
+        }
+        trace.push(errorLine);
+      });
+
+      return trace.join("\n");
+    }
     return message;
   };
 
@@ -20,6 +48,8 @@
       var suiteResults = {};
       var totalTests;
       var testCount;
+      var testList = [];
+      var testResult;
 
       var getTestList = function(testDesc) {
         var list = [];
@@ -28,6 +58,14 @@
         });
         return list;
       };
+
+      var runNext = function() {
+        var currentTest = testList.shift();
+
+        setTimeout(function() {
+            currentTest.run(testResult);
+        }, 0);
+      }.bind(this);
 
       var addListeners = function(testResult) {
         testResult.addListener("startTest", function(e) {
@@ -38,6 +76,9 @@
               startTime: Date.now(),
               exceptions: []
             };
+          } else if (suiteResults[testName].status !== "wait") {
+            // test was executed before, clear old exceptions
+            suiteResults[testName].exceptions = [];
           }
           suiteResults[testName].status = "startTest";
         });
@@ -73,14 +114,12 @@
         testResult.addListener("wait", function(e) {
           var testName = e.getData().getFullName();
 
-          //window.console.debug(testName + " wait");
           suiteResults[testName].status = "wait";
         });
 
         testResult.addListener("endTest", function(e) {
           testCount--;
           var testName = e.getData().getFullName();
-          //window.console.debug(testName, "endTest");
 
           var suiteResult = suiteResults[testName];
 
@@ -97,23 +136,27 @@
             suite = [];
             description = testName;
           }
+          var skipped = suiteResult.status === "skip";
+          var success = suiteResult.status === "startTest";
 
           var result = {
             id : (totalTests-testCount),
             description: description,
             suite: suite,
-            success: (suiteResult.status == "startTest"),
-            skipped: suiteResult.status == "skip",
-            log: log,
-            time: Date.now() - suiteResult.startTime
+            success: success,
+            skipped: skipped,
+            log: success ? [] : log,
+            time: skipped ? 0 : Date.now() - suiteResult.startTime
           };
 
           tc.result(result);
-          if (testCount == 0) {
-            tc.info({ total: totalTests });
+
+          if (testCount === 0) {
             tc.complete({
               coverage: window.__coverage__
             });
+          } else {
+            runNext();
           }
         });
       };
@@ -124,13 +167,28 @@
 
           var testDesc = JSON.parse(loader.getTestDescriptions());
 
-          var testList = getTestList(testDesc);
-          totalTests = testCount = testList.length;
-          tc.info({total: totalTests});
+          var classes = loader.getSuite().getTestClasses();
 
-          var testResult = new qx.dev.unit.TestResult();
+          var filter = window.__karma__.config.testClass ? window.__karma__.config.testClass : null;
+
+          for (var i=0; i<classes.length; i++) {
+
+            if (!filter || classes[i].getName().startsWith(filter)) {
+              var methods = classes[i].getTestMethods();
+              for (var j = 0; j < methods.length; j++) {
+                testList.push(methods[j]);
+              }
+            }
+          }
+          totalTests = testCount = testList.length;
+          tc.info({
+            total: totalTests
+          });
+
+
+          testResult = new qx.dev.unit.TestResult();
           addListeners(testResult);
-          loader.getSuite().runAsync(testResult);
+          runNext();
         }, this, 0);
       };
     };
