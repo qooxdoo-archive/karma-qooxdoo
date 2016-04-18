@@ -15,8 +15,15 @@
       lines.forEach(function(line, i) {
         var parts = /^[\t\s]*at\s([^\(]+)\s\((.+)\)$/.exec(line);
         if (!parts) {
-          trace.push(line);
-          return;
+          // firexfox stacktraces are different
+          if (line.indexOf("@") > -1) {
+            parts = line.split("@");
+            // add empty item on index 0 to make parts compatible (url must be on index 2)
+            parts.unshift("");
+          } else {
+            trace.push("\t"+line.trim());
+            return;
+          }
         }
         var errorLine = "\tat "+parts[1];
 
@@ -50,22 +57,24 @@
       var testCount;
       var testList = [];
       var testResult;
-
-      var getTestList = function(testDesc) {
-        var list = [];
-        testDesc.forEach(function(testClass) {
-          list = list.concat(testClass.tests);
-        });
-        return list;
-      };
+      var currentTest;
 
       var runNext = function() {
-        var currentTest = testList.shift();
+        if (currentTest && currentTest.getTestClass().getSandbox) {
+          var results = suiteResults[currentTest.getFullName()];
+          if (results.status === "failure" || results.status === "error") {
+            // restore sandbox on failed tests, because if the test is using spies/stubs/mockups
+            // which have been initialized + restored inside the test function and not in setUp/tearDown
+            // the restore part might not have been executed
+            currentTest.getTestClass().getSandbox().restore();
+          }
+        }
+        currentTest = testList.shift();
 
         setTimeout(function() {
-            currentTest.run(testResult);
-        }, 0);
-      }.bind(this);
+          currentTest.run(testResult);
+        }, 5);
+      };
 
       var addListeners = function(testResult) {
         testResult.addListener("startTest", function(e) {
@@ -97,7 +106,7 @@
 
             var suiteResult = suiteResults[errMap.test.getFullName()];
             suiteResult.status = "error";
-            suiteResult.exceptions.push(errMap.exception);
+            suiteResult.exceptions.push(formatError(errMap.exception));
           });
         });
 
@@ -107,7 +116,7 @@
 
             var suiteResult = suiteResults[errMap.test.getFullName()];
             suiteResult.status = "skip";
-            suiteResult.exceptions.push(errMap.exception);
+            suiteResult.exceptions.push(formatError(errMap.exception));
           });
         });
 
@@ -146,7 +155,8 @@
             success: success,
             skipped: skipped,
             log: success ? [] : log,
-            time: skipped ? 0 : Date.now() - suiteResult.startTime
+            time: skipped ? 0 : Date.now() - suiteResult.startTime,
+            assertionErrors: log
           };
 
           tc.result(result);
@@ -165,8 +175,6 @@
         qx.event.Timer.once(function() {
           var loader = qx.core.Init.getApplication();
 
-          var testDesc = JSON.parse(loader.getTestDescriptions());
-
           var classes = loader.getSuite().getTestClasses();
 
           var filter = window.__karma__.config.testClass ? window.__karma__.config.testClass : null;
@@ -184,10 +192,10 @@
           tc.info({
             total: totalTests
           });
-
-
           testResult = new qx.dev.unit.TestResult();
           addListeners(testResult);
+
+          // start the queue
           runNext();
         }, this, 0);
       };

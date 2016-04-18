@@ -57,9 +57,11 @@ module.exports = function(config) {
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
     browsers: ['Chrome'],
 
+    client: {
+      captureConsole: false
+    },
 
-    browserNoActivityTimeout: 360000,
-    browserDisconnectTimeout: 60000,
+    browserNoActivityTimeout: 60000,
 
     coverageReporter: {
       dir: 'coverage',
