@@ -2,50 +2,34 @@
 (function(window) {
   var parser = window.document.createElement("a");
 
-  var formatError = function (error) {
-    var stack = error.stack;
-    var message = error.message;
-
-    if (stack) {
-      var trace = [];
-      var lines = stack.split("\n");
-      if (message && stack.indexOf(message) === -1) {
-        trace.push(message.trim());
+  var formatStrackTrace = function(trace) {
+    var newTrace = [];
+    trace.forEach(function(line) {
+      var sourceLine = /^(.+):([0-9]+):([0-9]+)$/.exec(line);
+      if (!sourceLine) {
+        return;
       }
-      lines.forEach(function(line, i) {
-        var parts = /^[\t\s]*at\s([^\(]+)\s\((.+)\)$/.exec(line);
-        if (!parts) {
-          // firexfox stacktraces are different
-          if (line.indexOf("@") > -1) {
-            parts = line.split("@");
-            // add empty item on index 0 to make parts compatible (url must be on index 2)
-            parts.unshift("");
-          } else {
-            trace.push("\t"+line.trim());
-            return;
-          }
-        }
-        var errorLine = "\tat "+parts[1];
+      var urlString = sourceLine ? sourceLine[1] : line;
+      parser.href = urlString;
+      var newLine = "\t"+parser.pathname.substring(1);
+      if (sourceLine && sourceLine.length === 4 && sourceLine[2]) {
+        newLine += ":" + sourceLine[2]+":"+sourceLine[3];
+      }
+      newTrace.push(newLine);
+    });
+    return newTrace;
+  };
 
-        if (parts[2].indexOf("/") > -1) {
-          // strip down url
-          var sourceLine = /^(.+):([0-9]+):([0-9]+)$/.exec(parts[2]);
-          var urlString = sourceLine ? sourceLine[1] : parts[2];
-
-          parser.href = urlString;
-          errorLine += " -> " + parser.pathname.substring(1);
-          if (sourceLine.length === 4 && sourceLine[2]) {
-            errorLine += ":" + sourceLine[2]+":"+sourceLine[3];
-          }
-        } else {
-          errorLine += " -> ("+parts[2]+")";
-        }
-        trace.push(errorLine);
-      });
-
-      return trace.join("\n");
+  var formatError = function (error) {
+    var trace = [];
+    if (error instanceof qx.core.AssertionError) {
+      trace = error.getStackTrace();
+      trace.unshift(error.getComment()+": "+error.message);
+    } else {
+      trace = qx.dev.StackTrace.getStackTraceFromError(error);
+      trace.unshift(error.message);
     }
-    return message;
+    return trace.join("\n\t");
   };
 
   var createQooxdooStartFn = function(tc) {
@@ -60,18 +44,20 @@
       var currentTest;
 
       var runNext = function() {
-        if (currentTest && currentTest.getTestClass().getSandbox) {
+        if (currentTest) {
           var results = suiteResults[currentTest.getFullName()];
-          if (results.status === "failure" || results.status === "error") {
-            // restore sandbox on failed tests, because if the test is using spies/stubs/mockups
-            // which have been initialized + restored inside the test function and not in setUp/tearDown
-            // the restore part might not have been executed
-            currentTest.getTestClass().getSandbox().restore();
+          if (results && (results.status === "failure" || results.status === "error")) {
+            if (currentTest.getTestClass().getSandbox) {
+              // restore sandbox on failed tests, because if the test is using spies/stubs/mockups
+              // which have been initialized + restored inside the test function and not in setUp/tearDown
+              // the restore part might not have been executed
+              currentTest.getTestClass().getSandbox().restore();
+            }
           }
         }
         currentTest = testList.shift();
 
-        setTimeout(function() {
+        setTimeout(function runTest() {
           currentTest.run(testResult);
         }, 5);
       };
@@ -172,16 +158,27 @@
       };
 
       window.onload = function() {
-        qx.event.Timer.once(function() {
+        setTimeout(function() {
           var loader = qx.core.Init.getApplication();
 
           var classes = loader.getSuite().getTestClasses();
 
-          var filter = window.__karma__.config.testClass ? window.__karma__.config.testClass : null;
+          var filters = window.__karma__.config.testClass ? new qx.data.Array(window.__karma__.config.testClass.split(",")) : null;
 
           for (var i=0; i<classes.length; i++) {
+            var skip = true;
+            if (filters) {
+              filters.some(function(filter) {
+                if (classes[i].getName().startsWith(filter)) {
+                  skip = false;
+                  return true;
+                }
+              })
+            } else {
+              skip = false;
+            }
 
-            if (!filter || classes[i].getName().startsWith(filter)) {
+            if (skip === false) {
               var methods = classes[i].getTestMethods();
               for (var j = 0; j < methods.length; j++) {
                 testList.push(methods[j]);
@@ -195,9 +192,11 @@
           testResult = new qx.dev.unit.TestResult();
           addListeners(testResult);
 
+          qx.dev.StackTrace.FORMAT_STACKTRACE = formatStrackTrace;
+
           // start the queue
           runNext();
-        }, this, 0);
+        }, 0);
       };
     };
   };
