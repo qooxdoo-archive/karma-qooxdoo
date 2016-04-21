@@ -171,6 +171,13 @@
             });
           }
 
+          // sort by classname
+          classes.sort(function(a,b) {
+            if (a.getName() < b.getName()) return -1;
+            if (a.getName() > b.getName()) return 1;
+            return 0;
+          });
+
           for (var i=0; i<classes.length; i++) {
             var skip = true;
             if (filters) {
@@ -191,11 +198,6 @@
               }
             }
           }
-          testList.sort(function(a,b) {
-            if (a.getFullName() < b.getFullName()) return -1;
-            if (a.getFullName() > b.getFullName()) return 1;
-            return 0;
-          });
           totalTests = testCount = testList.length;
           tc.info({
             total: totalTests
