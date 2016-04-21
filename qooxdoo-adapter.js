@@ -163,13 +163,19 @@
 
           var classes = loader.getSuite().getTestClasses();
 
-          var filters = window.__karma__.config.testClass ? new qx.data.Array(window.__karma__.config.testClass.split(",")) : null;
+          var filters = null;
+          if (window.__karma__.config.testClass) {
+            filters = new qx.data.Array();
+            window.__karma__.config.testClass.split(",").forEach(function(filter) {
+              filters.push(new RegExp(filter));
+            });
+          }
 
           for (var i=0; i<classes.length; i++) {
             var skip = true;
             if (filters) {
               filters.some(function(filter) {
-                if (classes[i].getName().startsWith(filter)) {
+                if (filter.test(classes[i].getName())) {
                   skip = false;
                   return true;
                 }
