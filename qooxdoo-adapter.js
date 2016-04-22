@@ -1,6 +1,5 @@
 
 (function(window) {
-  var parser = window.document.createElement("a");
 
   var formatError = function (error) {
     var trace = [];
