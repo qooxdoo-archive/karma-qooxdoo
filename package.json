@@ -2,10 +2,10 @@
   "name": "karma-qooxdoo",
   "version": "0.4.2",
   "description": "A Karma plugin - qooxdoo unit testing framework adapter.",
-  "main": "qooxdoo-karma.js",
+  "main": "karma-qooxdoo.js",
   "repository": {
     "type": "git",
-    "url": "git://github.com/peuter/qooxdoo-karma.git"
+    "url": "git://github.com/qooxdoo/qooxdoo-karma.git"
   },
   "keywords": [
     "karma-plugin",
