@@ -2,29 +2,15 @@
 (function(window) {
   var parser = window.document.createElement("a");
 
-  var formatStrackTrace = function(trace) {
-    var newTrace = [];
-    trace.forEach(function(line) {
-      var sourceLine = /^(.+):([0-9]+):([0-9]+)$/.exec(line);
-      if (!sourceLine) {
-        return;
-      }
-      var urlString = sourceLine ? sourceLine[1] : line;
-      parser.href = urlString;
-      var newLine = "\t"+parser.pathname.substring(1);
-      if (sourceLine && sourceLine.length === 4 && sourceLine[2]) {
-        newLine += ":" + sourceLine[2]+":"+sourceLine[3];
-      }
-      newTrace.push(newLine);
-    });
-    return newTrace;
-  };
-
   var formatError = function (error) {
     var trace = [];
     if (error instanceof qx.core.AssertionError) {
       trace = error.getStackTrace();
-      trace.unshift(error.getComment()+": "+error.message);
+      if (error.getComment()) {
+        trace.unshift(error.getComment()+": "+error.message);  
+      } else {
+        trace.unshift(error.message);
+      }      
     } else {
       trace = qx.dev.StackTrace.getStackTraceFromError(error);
       trace.unshift(error.message);
@@ -204,8 +190,6 @@
           });
           testResult = new qx.dev.unit.TestResult();
           addListeners(testResult);
-
-          qx.dev.StackTrace.FORMAT_STACKTRACE = formatStrackTrace;
 
           // start the queue
           runNext();
