@@ -6,10 +6,10 @@
     if (error instanceof qx.core.AssertionError) {
       trace = error.getStackTrace();
       if (error.getComment()) {
-        trace.unshift(error.getComment()+": "+error.message);  
+        trace.unshift(error.getComment()+": "+error.message);
       } else {
         trace.unshift(error.message);
-      }      
+      }
     } else {
       trace = qx.dev.StackTrace.getStackTraceFromError(error);
       trace.unshift(error.message);
@@ -143,6 +143,8 @@
       };
 
       window.onload = function() {
+        var delay = window.__karma__.config.startDelay ? window.__karma__.config.startDelay : 0;
+        
         setTimeout(function() {
           var loader = qx.core.Init.getApplication();
 
@@ -192,7 +194,7 @@
 
           // start the queue
           runNext();
-        }, 0);
+        }, delay);
       };
     };
   };

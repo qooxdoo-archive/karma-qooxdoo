@@ -100,7 +100,9 @@ module.exports = function(config) {
     },
 
     qooxdooFramework: {
-      testSources: true
+      testSources: true,  // test qooxdoo sources [default: false]
+      startDelay: 0       // adds delay before the first test runs [default: 0], usefull if you want to open debugging tools in browser
+                          // before running the tests
     }
   })
 };
