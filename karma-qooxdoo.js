@@ -48,7 +48,7 @@ var initQooxdoo = function(logger, config, customFilehandlers) {
   qooxdooProxies['/script'] = path.join(basePath,'test','script');
 
   var testsSourceFile = '';
-  
+
   if (config.qooxdooFramework && config.qooxdooFramework.testSources === true) {
     // testing sources => add source files to the server
     testsSourceFile = path.resolve(basePath, path.join('test','script','tests-source.js'));
@@ -93,7 +93,7 @@ var initQooxdoo = function(logger, config, customFilehandlers) {
       var relativePath = absolutePath.startsWith(basePath) ? absolutePath.replace(basePath, "") : null;
 
       if (includeFiles) {
-        files.push(createPattern(absolutePath, false));
+        files.push(createPattern(absolutePath, false, true, config.autoWatch));
       }
 
       if (relativePath) {
