@@ -1,6 +1,6 @@
 {
   "name": "karma-qooxdoo",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "A Karma plugin - qooxdoo unit testing framework adapter.",
   "main": "karma-qooxdoo.js",
   "repository": {
