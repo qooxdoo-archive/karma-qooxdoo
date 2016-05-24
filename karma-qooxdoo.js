@@ -63,12 +63,8 @@ var initQooxdoo = function(logger, config, customFilehandlers) {
     var qx = {};
 
     // loads urisBefore
-    var matches = source.match(/\s*urisBefore : (\[.*\]),\n/);
-    if (!matches){
-      log.error("Failed to find 'urisBefore' property qx.$$loader in "+testSourceFile);
-      process.exit();
-    }
-    var urisBefore = eval(matches[1].toString());
+    var matches = source.match(/\s*urisBefore : \[(.*)\],\n/);
+    eval("var urisBefore = ["+matches[1]+"]");
     urisBefore.forEach(function(uri) {
       if (includeFiles) {
         files.unshift(createPattern(path.join(basePath, 'source', uri), false));
@@ -80,20 +76,12 @@ var initQooxdoo = function(logger, config, customFilehandlers) {
     });
 
     // read libinfo
-    matches = source.match(/var libinfo = ({.*});\n/);
-    if (!matches){
-      log.error("Failed to find 'var libinfo' in "+testSourceFile);
-      process.exit();
-    }
-    qx.$$libraries = eval(matches[1].toString());
+    matches = source.match("var libinfo = {(.*)};\n");
+    eval("qx.$$libraries = {" + matches[1] + "};");
 
     // read loader settings
-    matches = source.match(/\nqx\.\$\$loader = ({\n[.\n]*?\n});\n\n/);
-    if (!matches){
-      log.error("Failed to find 'qx.$$loader in "+testSourceFile);
-      process.exit();
-    }
-    var loader = qx.$$loader = eval(matches[1].toString());
+    matches = source.match(/qx\.\$\$loader = {\n((.|\n)+)(?=^};$\n\n)/m);
+    eval("var loader = qx.$$loader = { " + matches[1] + " };");
     qx.$$loader.addNoCacheParam = false;
 
     // load project files
