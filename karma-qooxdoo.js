@@ -17,6 +17,9 @@ var initQooxdoo = function(logger, config, customFilehandlers) {
   var files = config.files;
   var basePath = config.basePath;
 
+  // if the jasmine framework is used, we use the jasmine test runner
+  var testRunner = config.frameworks.indexOf("jasmine") > -1 ? "jasmine" : "qooxdoo";
+
   var includeFiles = false;
   for (var pre in config.preprocessors) {
     config.preprocessors[pre].forEach(function(prePro){
@@ -48,32 +51,35 @@ var initQooxdoo = function(logger, config, customFilehandlers) {
   qooxdooProxies['/script'] = path.join(basePath,'test','script');
 
   var testsSourceFile = '';
+  var errorMessage = '';
+  var relPath = ''
+  var included = false;
 
   if (config.qooxdooFramework && config.qooxdooFramework.testSources === true) {
     // testing sources => add source files to the server
-    testsSourceFile = path.resolve(basePath, path.join('test','script','tests-source.js'));
+    switch (testRunner) {
+      case "jasmine":
+        errorMessage = "Aborted due to missing sources.\n" + "please run ./generate.py source\n";
+        testsSourceFile = path.resolve(basePath, path.join('source','script','cv.js'));
+        relPath = "source";
+        includeFiles = true;
+        included = true;
+        break;
+
+      default: // qooxdoo testrunner
+        testsSourceFile = path.resolve(basePath, path.join('test','script','tests-source.js'));
+        errorMessage = "Aborted due to missing test sources.\n" + "please run ./generate.py test-source\n";
+        relPath = path.join('test','html');
+        break;
+    }
     if (!fs.existsSync(testsSourceFile)) {
       log.error("Aborted due to missing test sources.\n" + "please run ./generate.py test-source\n");
       process.exit();
     }
 
-    files.unshift(createPattern(testsSourceFile));
-
     var source = fs.readFileSync(testsSourceFile).toString();
     var qx = {};
 
-    // loads urisBefore
-    var matches = source.match(/\s*urisBefore : \[(.*)\],\n/);
-    eval("var urisBefore = ["+matches[1]+"]");
-    urisBefore.forEach(function(uri) {
-      if (includeFiles) {
-        files.unshift(createPattern(path.join(basePath, 'source', uri), false));
-      }
-      var source = uri.split(path.sep)[0];
-      if (!qooxdooProxies["/"+source]) {
-        qooxdooProxies["/"+source] = path.join(basePath,'source',source);
-      }
-    });
 
     // read libinfo
     matches = source.match("var libinfo = {(.*)};\n");
@@ -85,22 +91,22 @@ var initQooxdoo = function(logger, config, customFilehandlers) {
     qx.$$loader.addNoCacheParam = false;
 
     // load project files
-    var uris = loader.decodeUris(loader.packages[loader.parts[loader.boot][0]].uris);
+    var uris = loader.decodeUris(loader.packages[loader.parts[loader.boot][0]].uris).reverse();
     uris.forEach(function(uri) {
 
       // uris are relative to the test/html directory
-      var absolutePath = path.resolve(basePath, path.join('test','html'), uri);
+      var absolutePath = path.resolve(basePath, relPath, uri);
       var relativePath = absolutePath.startsWith(basePath) ? absolutePath.replace(basePath, "") : null;
 
       if (includeFiles) {
-        files.push(createPattern(absolutePath, false, true, config.autoWatch));
+        files.unshift(createPattern(absolutePath, included, true, config.autoWatch));
       }
 
       if (relativePath) {
         // proxy to base
         var source = relativePath.split(path.sep)[1];
         var target = path.join(basePath,source);
-        if (!qooxdooProxies["/"+source]) {
+        if (testRunner === "qooxdoo" && !qooxdooProxies["/"+source]) {
           qooxdooProxies["/"+source] = target;
         }
       }
@@ -110,9 +116,25 @@ var initQooxdoo = function(logger, config, customFilehandlers) {
         while (part === "..") {
           part = parts.shift();
         }
-        if (!qooxdooProxies["/"+part]) {
+        if (testRunner === "qooxdoo" && !qooxdooProxies["/"+part]) {
           qooxdooProxies["/"+part] = absolutePath.substring(0, absolutePath.indexOf(part) + part.length);
         }
+      }
+    });
+
+    files.unshift(createPattern(testsSourceFile));
+
+    // loads urisBefore
+    var matches = source.match(/\s*urisBefore : \[(.*)\],\n/);
+    eval("var urisBefore = ["+matches[1]+"]");
+    urisBefore.reverse();
+    urisBefore.forEach(function(uri) {
+      if (includeFiles) {
+        files.unshift(createPattern(path.join(basePath, 'source', uri), included));
+      }
+      var source = uri.split(path.sep)[0];
+      if (testRunner === "qooxdoo" && !qooxdooProxies["/"+source]) {
+        qooxdooProxies["/"+source] = path.join(basePath,'source',source);
       }
     });
 
@@ -133,7 +155,9 @@ var initQooxdoo = function(logger, config, customFilehandlers) {
     }
     files.push(createPattern(testsSourceFile));
   }
-  files.push(createPattern(path.resolve(__dirname, "qooxdoo-adapter.js")));
+  if (testRunner === "qooxdoo") {
+    files.push(createPattern(path.resolve(__dirname, "qooxdoo-adapter.js")));
+  }
 };
 
 initQooxdoo.$inject = ['logger', 'config', 'customFileHandlers'];

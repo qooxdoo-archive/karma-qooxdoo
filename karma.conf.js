@@ -1,5 +1,19 @@
 // Karma configuration
 // Generated on Mon Apr 11 2016 10:15:49 GMT+0200 (CEST)
+/**
+* This is the qooxdoo adapter for karma. It adds the required files needed to run your tests to the karma configuration automatically.
+* You can use two different test runners: qooxdoo and jasmine. With jasmine you can write your tests in the jasmine syntax. But there is
+* one caveheat which you have to obey: Since qooxdoo's generator does not understand the jasmine syntax you cannot generate the 'test' and 'test-source' jobs.
+* The good thing is that you do not have to. Once you generated the 'source' version of your qooxdoo application (./generate source) your tests will run.
+* Currently you can only run the tests in source with the jasmine test runner. The build will not work with jasmine.
+*
+* The necessary settings for using jasmine are:
+* frameworks: ['qooxdoo', 'jasmine'],
+* files: [<paths to your jasmine test specs>]
+* qooxdooFramework: {
+*   testSources: true
+* }
+*/
 var path = require('path');
 
 module.exports = function(config) {
@@ -11,10 +25,14 @@ module.exports = function(config) {
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
+    // if you only use the qooxdoo framework, qooxdoo's testrunner is used to run the tests
+    // but you can also use the jasmine testrunner to run your tests
+    // frameworks: ['qooxdoo', 'jasmine']
     frameworks: ['qooxdoo'],
 
 
     // list of files / patterns to load in the browser => auto-filled by the qooxdoo adapter
+    // if you use the jasmine testrunner, you have to add you test spec files here
     files: [],
 
 
